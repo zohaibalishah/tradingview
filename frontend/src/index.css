@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .buy-button {
+    @apply bg-green-500 text-white px-3 py-2 m-2 rounded-md hover:bg-green-600 transition-colors;
+  }
+  
+  .sell-button {
+    @apply bg-red-500 text-white px-3 py-2 m-2 rounded-md hover:bg-red-600 transition-colors;
+  }
+
+  .res-btn {
+    @apply px-3 py-1 border border-gray-300 bg-gray-100 cursor-pointer rounded text-sm hover:bg-gray-200 transition-colors;
+  }
+  
+  .res-btn.active {
+    @apply bg-primary-600 text-white;
+  }
+}

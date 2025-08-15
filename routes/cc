@@ -1,0 +1,276 @@
+const express = require('express');
+const router = express.Router();
+const axios = require('axios');
+const getLiveQuotes = require('../helpers/getLiveQuotes');
+const Trade = require('../models/Trading.model');
+const getLivePrice = require('../helpers/getLivePrice');
+const { datafeed } = require('../datafeed');
+const finnhub = require('finnhub');
+const finnhubClient = new finnhub.DefaultApi(
+  'd2dd5b1r01qjem5k7hegd2dd5b1r01qjem5k7hf0'
+); // Replace this
+
+// TradingView UDF /config endpoint using Finnhub (no change needed for finnhub, but comment for clarity)
+router.get('/config', (req, res) => {
+  res.json({
+    supported_resolutions: ['1', '5', '15', '30', '60', '1D'],
+    supports_search: true,
+    supports_group_request: false,
+    supports_timescale_marks: false,
+    supports_time: true,
+    supports_marks: true,
+  });
+});
+
+// Returns the current server time in seconds since epoch, as required by TradingView UDF
+router.get('/time', (req, res) => {
+  // Finnhub does not provide a /time endpoint, so we use server time
+  res.json({ time: Math.floor(Date.now() / 1000) });
+});
+
+// /symbols endpoint using finnhub symbol lookup
+router.get('/symbols', async (req, res) => {
+  try {
+    const symbol = req.query.symbol || 'OANDA:XAU_USD';
+    // Finnhub expects forex symbols as 'OANDA:XAU_USD', stocks as 'AAPL', etc.
+    // We'll try to look up the symbol using finnhub's symbol search endpoint
+    finnhubClient.symbolSearch(symbol, (error, data, response) => {
+      if (error) {
+        console.error('Finnhub symbolSearch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch symbol info from Finnhub' });
+      }
+      if (!data || !data.result || data.result.length === 0) {
+        return res.status(404).json({ error: 'Symbol not found in Finnhub' });
+      }
+      // Take the first matching result
+      const info = data.result[0];
+      res.json({
+        name: info.displaySymbol || info.symbol,
+        ticker: info.symbol,
+        description: info.description || info.displaySymbol || info.symbol,
+        type: info.type ? info.type.toLowerCase() : 'stock',
+        session: '24x7',
+        exchange: info.exchange || 'Finnhub',
+        listed_exchange: info.exchange || 'Finnhub',
+        timezone: 'Etc/UTC',
+        minmov: 1,
+        pricescale: 100,
+        has_intraday: true,
+        intraday_multipliers: ['1', '5', '15', '30', '60'],
+        supported_resolutions: ['1', '5', '15', '30', '60', '1D'],
+        volume_precision: 2,
+      });
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.get('/history', async (req, res) => {
+  try {
+    const { symbol = 'OANDA:XAU_USD', } = req.query;
+	console.log( req.query)
+
+	const oneMinuteRange = () => {
+		const now = Math.floor(Date.now() / 1000); // current Unix time in seconds
+		const oneMinuteAgo = now - 60; // minus 60 seconds
+	  
+		return { from: oneMinuteAgo, to: now };
+	  };
+	  
+	  console.log(oneMinuteRange());
+	  const {from,to}=oneMinuteRange()
+    // Verify required parameters
+    if (!symbol || !from || !to) {
+      return res.status(400).json({ error: 'Missing required parameters: symbol, from, or to' });
+    }
+    finnhubClient.stockCandles(
+      symbol,
+      'D',
+      from,
+      to,
+      (error, data, response) => {
+        if (error) {
+          console.error('Finnhub error:', error);
+          return res.status(500).json({ error: 'Failed to fetch data from Finnhub' });
+        }
+        // Verify data format
+        if (!data || data.s !== 'ok' || !Array.isArray(data.t)) {
+          return res.status(404).json({ error: 'No data found or invalid data format' });
+        }
+        res.json({
+          s: data.s,
+          t: data.t,
+          o: data.o,
+          h: data.h,
+          l: data.l,
+          c: data.c,
+          v: data.v,
+        });
+      }
+    );
+
+  
+    // const { symbol = 'XAU/USD', from, to, resolution = '1' } = req.query;
+    // datafeed.getBars(symbol, resolution, from, to, (bars) => {
+    // 	res.json({
+    // 		s: 'ok',
+    // 		t: bars.map((b) => b.time / 1000),
+    // 		o: bars.map((b) => b.open),
+    // 		h: bars.map((b) => b.high),
+    // 		l: bars.map((b) => b.low),
+    // 		c: bars.map((b) => b.close),
+    // 		v: bars.map((b) => b.volume),
+    // 	});
+    // });
+  } catch (e) {
+    res.status(500).json({ status: 0, message: e.message });
+  }
+});
+
+router.get('/price', async (req, res) => {
+  const symbol = req.query.symbol || 'XAU/USD';
+//   try {
+//     const price = await getLivePrice(symbol);
+//     res.json({ symbol, price });
+//   } catch (err) {
+//     console.error('Price fetch error', err);
+//     res.status(500).json({ error: 'Failed to fetch price' });
+//   }
+});
+
+router.get('/quotes', async (req, res) => {
+  const symbols = req.query.symbols?.split(',') || ['XAU/USD'];
+//   try {
+//     const quotes = await getLiveQuotes(symbols);
+//     res.json({ s: 'ok', data: quotes });
+//   } catch (err) {
+//     console.error(err);
+//     res.json({ s: 'error', errmsg: 'Failed to fetch quotes' });
+//   }
+});
+
+router.get('/marks', async (req, res) => {
+  const trades = await Trade.findAll({ where: { userId: 1 } });
+  const marks = trades.map((t, index) => ({
+    id: t.id,
+    time: Math.floor(new Date(t.createdAt).getTime() / 1000),
+    color: t.side === 'buy' ? 'green' : 'red',
+    label: t.side === 'buy' ? 'B' : 'S',
+    tooltip: `${t.side.toUpperCase()} @ 3361.38`,
+  }));
+});
+
+router.get('/market-stats', async (req, res) => {
+  const symbol = req.query.symbol || 'XAU/USD';
+  try {
+    const response = await axios.get(
+      `${process.env.BASE_URL}/quote?symbol=XAU/USD&apikey=${process.env.API_KEY}`
+    );
+    if (response.data) {
+      const q = response.data;
+      res.json({
+        previousClose: parseFloat(q.previous_close).toFixed(2),
+        open: parseFloat(q.open).toFixed(2),
+        low: parseFloat(q.low).toFixed(2),
+        high: parseFloat(q.high).toFixed(2),
+        close: parseFloat(q.close).toFixed(2),
+        dailyChange: (parseFloat(q.percent_change) * 1).toFixed(2) + '%',
+        // Since Bid, Ask, Volume are missing:
+        bid: 'N/A',
+        ask: 'N/A',
+        volume: 'N/A',
+        // You can optionally show 52-week high/low
+        fiftyTwoWeekLow: parseFloat(q.fifty_two_week.low).toFixed(2),
+        fiftyTwoWeekHigh: parseFloat(q.fifty_two_week.high).toFixed(2),
+      });
+    }
+  } catch (e) {
+    console.error('Error fetching market stats:', e);
+    res.status(500).json({ message: 'Failed to fetch market stats' });
+  }
+});
+
+// / app.get('/api/marks', (req, res) => {
+//   const now = Math.floor(Date.now() / 1000);
+//   const marks = [
+//     {
+//       id: 1,
+//       time: now - 7200, // 2 hours ago
+//       color: 'green',
+//       text: 'Buy',
+//       label: 'B',
+//       labelFontColor: 'white',
+//       minSize: 14,
+//       tooltip: 'Buy @ 3375.00',
+//       shape: 'arrow_up',
+//       borderColor: 'green',
+//       backgroundColor: '#e0ffe0',
+//       symbol: 'XAU/USD',
+//       price: 3375.00,
+//     },
+//     {
+//       id: 2,
+//       time: now - 5400, // 1.5 hours ago
+//       color: 'red',
+//       text: 'Sell',
+//       label: 'S',
+//       labelFontColor: 'white',
+//       minSize: 14,
+//       tooltip: 'Sell @ 3380.00',
+//       shape: 'arrow_down',
+//       borderColor: 'red',
+//       backgroundColor: '#ffe0e0',
+//       symbol: 'XAU/USD',
+//       price: 3380.00,
+//     },
+//     {
+//       id: 3,
+//       time: now - 3600, // 1 hour ago
+//       color: 'blue',
+//       text: 'TP',
+//       label: 'T',
+//       labelFontColor: 'white',
+//       minSize: 14,
+//       tooltip: 'Take Profit @ 3390.00',
+//       shape: 'circle',
+//       borderColor: 'blue',
+//       backgroundColor: '#e0e0ff',
+//       symbol: 'XAU/USD',
+//       price: 3390.00,
+//     },
+//     {
+//       id: 4,
+//       time: now - 1800, // 30 min ago
+//       color: 'orange',
+//       text: 'SL',
+//       label: 'L',
+//       labelFontColor: 'white',
+//       minSize: 14,
+//       tooltip: 'Stop Loss @ 3360.00',
+//       shape: 'circle',
+//       borderColor: 'orange',
+//       backgroundColor: '#fff0e0',
+//       symbol: 'XAU/USD',
+//       price: 3360.00,
+//     },
+//     {
+//       id: 5,
+//       time: now - 600, // 10 min ago
+//       color: 'purple',
+//       text: 'Buy',
+//       label: 'B',
+//       labelFontColor: 'white',
+//       minSize: 14,
+//       tooltip: 'Buy @ 3385.00',
+//       shape: 'arrow_up',
+//       borderColor: 'purple',
+//       backgroundColor: '#f0e0ff',
+//       symbol: 'XAU/USD',
+//       price: 3385.00,
+//     },
+//   ];
+//   res.json(marks);
+// });
+
+module.exports = router;
