@@ -10,6 +10,7 @@ const User = require('../models/User.model');
 router.post('/checkEmail', authController.checkEmail);
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
+router.post('/logout', authenticate, authController.logout);
 router.get('/me', authenticate, authController.currentUser);
 router.post('/update-password', authenticate, authController.updatePassword);
 

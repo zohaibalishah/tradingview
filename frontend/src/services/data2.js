@@ -82,7 +82,6 @@ export function UDFCompatibleDatafeed() {
       const socket = getSocket();
 
       socket.on('price:update', ({ price }) => {
-        console.log('[Datafeed] price:update', price);
         onTick({
           time: Date.now(),
           open: price,
@@ -103,7 +102,7 @@ export function UDFCompatibleDatafeed() {
       // }
       // // Optionally, you could namespace by symbol here if needed
       // socket.on('price:update', ({ price }) => {
-      //   console.log(price)
+     
       //   onTick({
       //     time: Date.now(),
       //     open: price,
@@ -123,23 +122,23 @@ export function UDFCompatibleDatafeed() {
     },
 
     // Add marks support
-    getMarks: async (symbolInfo, from, to, onResult, onError) => {
-      // Example: fetch marks from backend
-      try {
-        const url = `http://localhost:4000/api/marks?symbol=${symbolInfo.name}&from=${from}&to=${to}`;
-        const res = await axios.get(url);
-        const data = res.data;
-        // data should be an array of marks
-        // Each mark: { id, time, color, text, label, labelFontColor, minSize }
-        if (Array.isArray(data)) {
-          onResult(data);
-        } else {
-          onResult([]);
-        }
-      } catch (err) {
-        if (onError) onError('Marks fetch error');
-        else onResult([]);
-      }
-    },
+    // getMarks: async (symbolInfo, from, to, onResult, onError) => {
+    //   // Example: fetch marks from backend
+    //   try {
+    //     const url = `http://localhost:4000/api/marks?symbol=${symbolInfo.name}&from=${from}&to=${to}`;
+    //     const res = await axios.get(url);
+    //     const data = res.data;
+    //     // data should be an array of marks
+    //     // Each mark: { id, time, color, text, label, labelFontColor, minSize }
+    //     if (Array.isArray(data)) {
+    //       onResult(data);
+    //     } else {
+    //       onResult([]);
+    //     }
+    //   } catch (err) {
+    //     if (onError) onError('Marks fetch error');
+    //     else onResult([]);
+    //   }
+    // },
   };
 }

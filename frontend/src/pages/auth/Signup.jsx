@@ -29,14 +29,75 @@ export default function SignupPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    register.mutate(form, {
+    
+    // Clear any existing errors
+    setErrors({});
+    
+    // Client-side validation
+    const newErrors = {};
+    
+    if (!form.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    }
+    
+    if (!form.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    }
+    
+    if (!form.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+    
+    if (!form.password) {
+      newErrors.password = "Password is required";
+    } else if (form.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters long";
+    } 
+    
+    // else if (!/[a-zA-Z]/.test(form.password) || !/\d/.test(form.password)) {
+    //   newErrors.password = "Password must contain at least one letter and one number";
+    // }
+    
+    if (!form.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (form.password !== form.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
+    // Combine firstName and lastName into name
+    const registrationData = {
+      name: `${form.firstName} ${form.lastName}`.trim(),
+      email: form.email,
+      password: form.password,
+      confirmPassword: form.confirmPassword
+    };
+    
+    register.mutate(registrationData, {
       onSuccess: (data) => {
         toast.success("Account created successfully! Welcome aboard!");
-        navigate("/dashboard");
+        // Redirect based on user role
+        if (data.user && data.user.role === 'SUPER ADMIN') {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       },
       onError: (err) => {
-        const errorMessage = err?.response?.data?.message || error.message;
+        console.error("Registration error:", err);
+        const errorMessage = err?.response?.data?.message || err.message || "An unknown error occurred.";
         toast.error(errorMessage);
+        
+        // Set form errors if available
+        if (err?.response?.data?.errors) {
+          setErrors(err.response.data.errors);
+        }
       },
     });
   };
@@ -46,10 +107,10 @@ export default function SignupPage() {
     if (!password) return { strength: 0, label: "", color: "", bgColor: "" };
     
     let strength = 0;
+    if (password.length >= 6) strength++;
     if (password.length >= 8) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
+    if (/[a-zA-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
     if (/[^A-Za-z0-9]/.test(password)) strength++;
     
     const labels = ["Very Weak", "Weak", "Fair", "Good", "Strong"];

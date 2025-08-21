@@ -5,34 +5,32 @@ const Trade = sequelize.define(
   'Trade',
   {
     userId: { type: DataTypes.INTEGER, allowNull: false },
+    accountId: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
     symbol: { type: DataTypes.STRING, allowNull: false },
-    side: { type: DataTypes.ENUM('buy', 'sell'), allowNull: false },
-    amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false }, // in base currency
-    leverage: { type: DataTypes.INTEGER, defaultValue: 1 },
-    openPrice: { type: DataTypes.DECIMAL(10, 5) }, // entry price
+    side: { type: DataTypes.ENUM('BUY', 'SELL'), allowNull: false },
+    volume: { type: DataTypes.FLOAT, allowNull: false }, // lot size
+    entryPrice: { type: DataTypes.FLOAT, allowNull: false }, //openPrice
     openTime: { type: DataTypes.DATE },
-
+    stopLoss: { type: DataTypes.DECIMAL(10, 5) },
+    takeProfit: { type: DataTypes.DECIMAL(10, 5) },
     status: {
       type: DataTypes.ENUM('open', 'closed', 'stopped', 'tp_hit', 'sl_hit'),
       defaultValue: 'open',
     },
-
     closePrice: { type: DataTypes.DECIMAL(10, 5) },
-    closeTime: { type: DataTypes.DATE },
+    closeTime: { type: DataTypes.DATE }, //exitPrice
+    profitLoss: { type: DataTypes.DECIMAL(10, 5), defaultValue: 0 },
 
-    profitLoss: { type: DataTypes.DECIMAL(10, 5) },
 
-    stopLoss: { type: DataTypes.DECIMAL(10, 5) },
-    takeProfit: { type: DataTypes.DECIMAL(10, 5) },
+    // leverage: { type: DataTypes.INTEGER, defaultValue: 1 },
 
-    // price: { type: DataTypes.FLOAT, allowNull: false },
-    volume: { type: DataTypes.FLOAT, allowNull: false },
-    // Optional Future Fields
-    brokerOrderId: { type: DataTypes.STRING },
-    partialClosedAmount: { type: DataTypes.DECIMAL(10, 2) },
-    trailingStop: { type: DataTypes.DECIMAL(10, 5) },
-    strategyId: { type: DataTypes.INTEGER },
+    // brokerOrderId: { type: DataTypes.STRING },
+    // partialClosedAmount: { type: DataTypes.DECIMAL(10, 2) },
+    // trailingStop: { type: DataTypes.DECIMAL(10, 5) },
+    // strategyId: { type: DataTypes.INTEGER },
   },
   { timestamps: true }
 );
+
+
 module.exports = Trade;

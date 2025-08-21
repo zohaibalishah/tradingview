@@ -119,7 +119,6 @@ export default function App() {
 
   // ✅ Listen to real-time markers from backend
   useEffect(() => {
-    console.log("chartContainerRef",chartContainerRef)
   //   socket.on("new_trade", (marker) => {
   //     console.log("📡 Real-time trade received:", marker);
   //     if (widgetRef.current?.chart()) {

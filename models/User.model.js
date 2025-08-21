@@ -4,7 +4,7 @@ const { getHashValue } = require('../helpers/hash.helper');
 const constants = require('../config/constants');
 const Wallet = require('./Wallet.model');
 const Account = require('./Account.model');
-
+const Trade = require('./Trading.model');
 
 const User = sequelize.define(
   'user',
@@ -182,31 +182,41 @@ const User = sequelize.define(
         }
       },
       afterCreate: async (user, options) => {
+        try {
+          // Create wallet first (each user must have exactly one wallet)
+          await Wallet.create({
+            userId: user.id,
+            balance: 0,
+            currency: 'USD',
+            isActive: true
+          });
 
-   // // Create demo account
-      // const demoAccount = await Account.create({
-      //   userId: newUser.id,
-      //   type: 'demo',
-      //   balance: 10000,
-      //   isActive: true,
-      //   status: 'active',
-      // });
+          // Create demo account
+          const demoAccount = await Account.create({
+            userId: user.id,
+            type: 'demo',
+            balance: 10000,
+            isActive: true,
+            status: 'active',
+          });
 
-      // Create real account
-      await Account.create({
-        userId: user.id,
-        type: 'real',
-        balance: 0,
-        isActive: true,
-        status: 'pending_verification',
-      });
+          // Update activeAccountId to demoAccount.id
+          user.activeAccountId = demoAccount.id;
+          await user.save();
 
-      // Create wallet for real account
-      await Wallet.create({
-        userId: user.id,
-        availableBalance: 0,
-      });
-    
+          // Create real account
+          await Account.create({
+            userId: user.id,
+            type: 'real',
+            balance: 0,
+            isActive: false,
+            status: 'pending_verification',
+          });
+
+        } catch (error) {
+          console.error('Error in User afterCreate hook:', error);
+          throw error;
+        }
       },
     },
   }
@@ -219,5 +229,8 @@ Account.belongsTo(User, { foreignKey: 'userId' });
 User.hasOne(Wallet, { foreignKey: 'userId',as:'wallet' });
 Wallet.belongsTo(User, { foreignKey: 'userId' });
 // User.hasMany(models.WalletTransaction, { foreignKey: 'userId' });
+// Define associations
+Trade.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(Trade, { foreignKey: 'userId' });
 
 module.exports = User;

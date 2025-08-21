@@ -213,7 +213,7 @@
 						return [
 							{
 								position: "top",
-								text: new Date(time * 1000).toUTCString() + "; " + price.toFixed(4),
+								text: new Date(time * 1000).toUTCString() + "; " + Number(price).toFixed(4),
 								click: function() {
 									console.log("Custom context menu item clicked");
 								}

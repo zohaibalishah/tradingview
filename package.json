@@ -3,19 +3,36 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "test": "jest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "init-admin": "node scripts/init-admin.js",
+    "init-categories-symbols": "node scripts/init-categories-symbols.js",
+    "test-admin": "node scripts/test-admin.js",
+    "test-admin-frontend": "node scripts/test-admin-frontend.js"
   },
-  "keywords": [],
+  "keywords": [
+    "trading",
+    "finance",
+    "api",
+    "websocket"
+  ],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Trading platform backend with real-time data and secure authentication",
   "dependencies": {
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.5.1",
     "finnhub": "^2.0.7",
+    "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.17.1",
     "morgan": "^1.10.1",
@@ -23,5 +40,14 @@
     "node-cron": "^4.2.1",
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   }
 }

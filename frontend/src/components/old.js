@@ -198,7 +198,6 @@ const AdvancedTradingViewChart = ({}) => {
   };
 
   useEffect(() => {
-    console.log(widgetRef)
     // 🔔 Listen to real-time trade markers
     // if (widgetRef?.chart()) {
     //   widgetRef.chart().createShape({

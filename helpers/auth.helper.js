@@ -24,7 +24,6 @@ module.exports.authenticate = async (req, res, next) => {
           next();
           return;
         }
-
         req.user = user?.dataValues;
         next();
       } catch (error) {

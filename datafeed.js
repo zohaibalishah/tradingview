@@ -65,7 +65,6 @@ const datafeed = {
   },
 
   subscribeBars: (symbolInfo, resolution, onTick, subscriberUID) => {
-    console.log("subscribeBars",subscriberUID)
     subscribers[subscriberUID] = {
       symbol: symbolInfo.name,
       resolution,
@@ -74,7 +73,6 @@ const datafeed = {
   },
 
   unsubscribeBars: (subscriberUID) => {
-    console.log("unsubscribeBars",subscriberUID)
     delete subscribers[subscriberUID];
   },
 };

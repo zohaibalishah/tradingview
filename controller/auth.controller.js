@@ -6,7 +6,6 @@ const {
   generateResetCode,
   getOtp,
   signAccessForgotToken,
-  generateRefreshToken,
 } = require('../helpers/hash.helper');
 const { RESPONSE_MESSAGES, ACCOUNT_STATUSES } = require('../config/constants');
 const { Op } = require('sequelize');
@@ -112,8 +111,7 @@ module.exports.login = async (req, res) => {
         {
           model: Account,
           required: false,
-          where: { isActive: true }, 
-       
+          // Include all accounts, not just active ones
         },
         {
           model: Wallet,
@@ -208,34 +206,24 @@ module.exports.signup = async (req, res) => {
         otpExpirationTime: new Date(new Date().getTime() + 5 * 60000),
       });
 
-      // Create real account
-      const realAccount = await Account.create({
-        userId: newUser.id,
-        type: 'real',
-        balance: 0,
-        isActive: false,
-        status: 'pending_verification',
+      // Wallet and accounts are automatically created by User.afterCreate hook
+      const updatedUser = await User.findByPk(newUser.id, {
+        include: [
+          {
+            model: Account,
+            required: false,
+          },
+          {
+            model: Wallet,
+            as: 'wallet'
+          },
+        ],
       });
-
-      // Create wallet for real account
-      await Wallet.create({
-        accountId: realAccount.id,
-        availableBalance: 0,
-      });
-      const updatedUser = await User.findByPk(newUser.id);
       const token = await signAccessToken(updatedUser);
       const { password: _, ...userWithoutPassword } = updatedUser.toJSON();
       return res.status(200).json({
         status: 1,
         ...userWithoutPassword,
-        accounts: [
-          {
-            id: realAccount.id,
-            type: realAccount.type,
-            balance: realAccount.balance,
-            isActive: realAccount.isActive,
-          },
-        ],
         token: token,
         message: 'Account Created verify your OTP',
       });
@@ -284,30 +272,50 @@ module.exports.signupPhone = async (req, res) => {
 
 module.exports.currentUser = async (req, res) => {
   try {
-
     const user = await User.findByPk(req.user.id, {
       include: [
         {
           model: Account,
           required: false,
-          where: { isActive: true }, 
-       
+          // Include all accounts, not just active ones
         },
         {
           model: Wallet,
-          as:'wallet'
+          as: 'wallet',
+          required: false
         },
       ],
     });
+    
     if (!user) {
       return res
         .status(404)
         .json({ status: 0, message: RESPONSE_MESSAGES.USER_NOT_FOUND });
     }
+    
     const { password: _, ...userWithoutPassword } = user.toJSON();
     return res.status(200).json({
       status: 1,
       data: { ...userWithoutPassword },
+    });
+  } catch (e) {
+    console.error('Error in currentUser:', e);
+    return res.status(500).json({ status: 0, message: e.message });
+  }
+};
+
+// Logout controller
+module.exports.logout = async (req, res) => {
+  try {
+    // Update user's token version to invalidate current token
+    await User.update(
+      { tokenVersion: req.user.tokenVersion + 1 },
+      { where: { id: req.user.id } }
+    );
+
+    return res.status(200).json({
+      status: 1,
+      message: 'Logged out successfully',
     });
   } catch (e) {
     return res.status(500).json({ status: 0, message: e.message });

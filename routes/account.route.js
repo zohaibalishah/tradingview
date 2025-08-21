@@ -17,6 +17,13 @@ router.post('/create', authenticate, controller.createAccount);
 // }
 router.post('/fund', authenticate, controller.fundAccountFromWallet);
 
+// POST /api/accounts/transfer-to-wallet
+// {
+//   "accountId": 456,
+//   "amount": 100
+// }
+router.post('/transfer-to-wallet', authenticate, controller.transferAccountToWallet);
+
 
 
 

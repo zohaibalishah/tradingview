@@ -1,57 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FaWallet,
   FaChartBar,
   FaChartLine,
   FaStar,
+  FaExclamationTriangle,
+  FaSun,
+  FaMoon,
 } from 'react-icons/fa';
 
 import { useUser } from '../services/auth';
-import Layout from '../components/Layout';
+import Layout from '../components/layouts/Layout';
 import TradingChart from '../components/TradingChart';
-import ChartSection from '../components/dashboard/ChartSection';
 import WatchlistPanel from '../components/dashboard/WatchlistPanel';
 import TradeTable from '../components/dashboard/TradeTable';
+import TradeSummary from '../components/dashboard/TradeSummary';
+import TradeButton from '../components/TradeButton';
 
 export default function DashboardPage() {
   const { data: user } = useUser();
   const [isWatchlistCollapsed, setIsWatchlistCollapsed] = useState(false);
+  const [selectedTrade, setSelectedTrade] = useState(null);
+  const [chartTheme, setChartTheme] = useState('light');
 
-  // Stats data
-  const stats = [
-    {
-      title: 'Total Balance',
-      value: '$99,989.65',
-      change: '+12.5%',
-      changeType: 'positive',
-      icon: FaWallet,
-      color: 'bg-green-500',
-    },
-    {
-      title: 'Active Trades',
-      value: '3',
-      change: '+1',
-      changeType: 'positive',
-      icon: FaChartBar,
-      color: 'bg-blue-500',
-    },
-    {
-      title: 'Portfolio Value',
-      value: '$99,984.83',
-      change: '-0.005%',
-      changeType: 'negative',
-      icon: FaChartLine,
-      color: 'bg-purple-500',
-    },
-    {
-      title: 'Total Profit',
-      value: '-$4.82',
-      change: '-0.005%',
-      changeType: 'negative',
-      icon: FaStar,
-      color: 'bg-orange-500',
-    },
-  ];
+  const toggleChartTheme = () => {
+    setChartTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
+
+  const handleTradeSelect = (trade) => {
+    setSelectedTrade(trade);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedTrade(null);
+  };
 
   const toggleWatchlist = () => {
     setIsWatchlistCollapsed(!isWatchlistCollapsed);
@@ -59,34 +41,62 @@ export default function DashboardPage() {
 
   return (
     <Layout title="Trading Dashboard">
+      <div className="flex flex-col lg:flex-row gap-6 mb-4">
+        <div
+          className={`${isWatchlistCollapsed ? 'w-full' : 'lg:w-2/3'} `}
+        >
+          <div className="relative">
+            <div className="absolute flex gap-3  right-1/3 z-10 ">
+              <button
+                onClick={toggleChartTheme}
+                className={`p-2 rounded-lg shadow-lg transition-all duration-200 ${
+                  chartTheme === 'light'
+                    ? 'bg-gray-800 text-white hover:bg-gray-700'
+                    : 'bg-white text-gray-800 hover:bg-gray-100'
+                }`}
+                title={`Switch to ${chartTheme === 'light' ? 'dark' : 'light'} mode`}
+              >
+                {chartTheme === 'light' ? (
+                  <FaMoon className="w-4 h-4" />
+                ) : (
+                  <FaSun className="w-4 h-4" />
+                )}
+              </button>
 
-      {/* Main Trading Interface */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-4">
-        <div className={`${isWatchlistCollapsed ? 'lg:col-span-4' : 'lg:col-span-3'} `}>
-        <TradingChart />
+              <div className="flex items-center justify-center">
+              <TradeButton />
+            </div>
+            </div>
+          
+            <TradingChart selectedTrade={selectedTrade} theme={chartTheme} />
+            {selectedTrade && (
+              <button
+                onClick={handleClearSelection}
+                className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 z-10"
+              >
+                Clear Selection
+              </button>
+            )}
+          </div>
         </div>
-        
-        {/* Watchlist Panel - Takes 1 column when visible, hidden when collapsed */}
-        {!isWatchlistCollapsed && (
-          <div className="lg:col-span-1">
-            <WatchlistPanel 
-              isCollapsed={isWatchlistCollapsed} 
-              onToggle={toggleWatchlist} 
+        <div className={`${isWatchlistCollapsed ? '' : 'lg:w-1/3'} flex-1`}>
+          <div>
+            <WatchlistPanel
+              isCollapsed={isWatchlistCollapsed}
+              onToggleCollapse={() =>
+                setIsWatchlistCollapsed(!isWatchlistCollapsed)
+              }
             />
           </div>
-        )} 
+        </div> 
       </div>
 
-      {/* Collapsed Watchlist Button - Only show when watchlist is collapsed */}
-      {isWatchlistCollapsed && (
-        <div className="mb-6">
-          <WatchlistPanel 
-            isCollapsed={isWatchlistCollapsed} 
-            onToggle={toggleWatchlist} 
-          />
-        </div>
-      )} 
-
+   <TradeTable
+        onTradeSelect={handleTradeSelect}
+        selectedTradeId={selectedTrade?.id}
+      /> 
+      
+ 
     </Layout>
   );
 }

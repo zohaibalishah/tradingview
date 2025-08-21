@@ -1,11 +1,10 @@
 import { Navigate } from "react-router-dom";
 import { useUser } from "../services/auth";
-import LoadingSpinner from "./LoadingSpinner";
-
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function ProtectedRoute({ children }) {
-  const { data: user, isLoading } = useUser();
-
+  const { data: user, isLoading, error } = useUser();
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-500 to-secondary-700 flex items-center justify-center">
@@ -17,7 +16,14 @@ export default function ProtectedRoute({ children }) {
     );
   }
   
-  if (!user) return <Navigate to="/login" replace />;
+  if (error || !user) {
+    return <Navigate to="/login" replace />;
+  }
 
+  // If user is admin, redirect to admin dashboard
+  if (user.role === 'SUPER ADMIN') {
+    return <Navigate to="/admin" replace />;
+  }
+  
   return children;
 }

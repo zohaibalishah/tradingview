@@ -14,24 +14,17 @@ import {
   FaHome,
   FaChartBar,
   FaCrown,
+  FaShieldAlt,
 } from 'react-icons/fa';
-import { useUser, useLogout } from '../services/auth';
+import { useUser } from '../../services/auth';
 import { useNavigate } from 'react-router-dom';
+import UserDropdown from '../UserDropdown';
 
 export default function Layout({ children, title = "Dashboard" }) {
   const { data: user } = useUser();
-  const logout = useLogout();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-
-  const onLogout = () => {
-    logout.mutate(undefined, {
-      onSuccess: () => {
-        navigate('/login');
-      },
-    });
-  };
 
   const navigationItems = [
     { id: 'overview', label: 'Overview', icon: FaHome, active: true },
@@ -41,6 +34,12 @@ export default function Layout({ children, title = "Dashboard" }) {
     { id: 'wallet', label: 'Wallet', icon: FaWallet },
     { id: 'settings', label: 'Settings', icon: FaCog },
     { id: 'profile', label: 'Profile', icon: FaUser },
+  ];
+
+  // Add admin link if user is admin
+  const adminNavigationItems = [
+    ...navigationItems,
+    ...(user?.role === 'SUPER ADMIN' ? [{ id: 'admin', label: 'Admin', icon: FaShieldAlt, href: '/admin' }] : []),
   ];
 
   return (
@@ -77,32 +76,16 @@ export default function Layout({ children, title = "Dashboard" }) {
               />
             </div>
 
+    
+
             {/* Notifications */}
             <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <FaBell className="text-gray-600" />
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
             </button>
 
-            {/* User info and logout */}
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:block text-right">
-                <p className="text-sm font-medium text-gray-900 truncate max-w-32">{user?.email}</p>
-                <div className="flex items-center gap-1">
-                  <FaCrown className="text-yellow-500 text-xs" />
-                  <p className="text-xs text-gray-500">Premium</p>
-                </div>
-              </div>
-              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                <FaUser className="text-white text-sm" />
-              </div>
-              <button
-                onClick={onLogout}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
-              >
-                <FaSignOutAlt className="text-sm" />
-                <span className="hidden sm:block text-sm font-medium">Sign Out</span>
-              </button>
-            </div>
+            {/* User dropdown */}
+            <UserDropdown />
           </div>
         </div>
       </header>
