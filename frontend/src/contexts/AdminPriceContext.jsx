@@ -40,6 +40,7 @@ export const AdminPriceProvider = ({ children }) => {
 
       // Listen for price updates for admin symbols
       const handlePriceUpdate = (data) => {
+        console.log('data',data)
         const { symbol, price, ask, bid, timestamp } = data;
         
         if (symbol && !isNaN(price)) {
@@ -90,7 +91,7 @@ export const AdminPriceProvider = ({ children }) => {
       };
 
       // Add event listeners
-      socket.on('price:update', handlePriceUpdate);
+      socket.on('admin:price:update', handlePriceUpdate);
       socket.on('connect', handleConnect);
       socket.on('disconnect', handleDisconnect);
       socket.on('subscribed:gold-symbols', handleSubscribed);
@@ -98,7 +99,7 @@ export const AdminPriceProvider = ({ children }) => {
 
       // Cleanup function
       return () => {
-        socket.off('price:update', handlePriceUpdate);
+        socket.off('admin:price:update', handlePriceUpdate);
         socket.off('connect', handleConnect);
         socket.off('disconnect', handleDisconnect);
         socket.off('subscribed:gold-symbols', handleSubscribed);

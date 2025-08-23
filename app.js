@@ -22,6 +22,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "wss:", "ws:", "https://finnhub.io"],
+      frameSrc: ["'self'", "blob:"],
     },
   },
   crossOriginEmbedderPolicy: false,
@@ -99,7 +100,24 @@ app.use('/api/admin/symbols', require('./routes/admin/symbol.route')); // Symbol
 app.use('/api/admin/deposits',authenticate, require('./routes/admin/deposit.route')); // Admin deposit management routes
 app.use('/api/admin/withdrawals',authenticate, require('./routes/admin/withdrawal.route')); // Admin withdrawal management routes
 
-
+// Serve static files from frontend build in production
+// if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  
+  // Serve static files from the frontend build directory
+  app.use(express.static(path.join(__dirname, 'frontend/dist')));
+  
+  // Handle client-side routing by serving index.html for all non-API routes
+  app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ status: 0, message: 'API endpoint not found' });
+    }
+    
+    // Serve the React app for all other routes
+    res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
+  });
+// }
 
 // Global error handling middleware
 app.use((err, req, res, next) => {

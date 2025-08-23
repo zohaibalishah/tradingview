@@ -14,17 +14,7 @@ export const usePriceContext = () => {
   return context;
 };
 
-// Helper function to apply broker spread (moved from backend)
-const applyBrokerSpread = (price, spread = 0.1) => {
-  if (typeof price !== 'number' || typeof spread !== 'number') {
-    throw new Error('Invalid input: price and spread must be numbers');
-  }
-  return {
-    bid: parseFloat((price - spread / 2).toFixed(5)),
-    ask: parseFloat((price + spread / 2).toFixed(5)),
-    mid: parseFloat(Number(price).toFixed(5)),
-  };
-};
+
 
 // Price Provider Component
 export const PriceProvider = ({ children }) => {
@@ -350,7 +340,6 @@ export const PriceProvider = ({ children }) => {
     getEntryPrice,
     isPriceStale,
     getConnectionStatus,
-    applyBrokerSpread,
     getCurrencyPrice,
     getAvailableCurrencies,
     

@@ -22,6 +22,7 @@ import ProtectedRoute from "./protectedRoute/ProtectedRoute";
 import AdminProtectedRoute from "./protectedRoute/AdminProtectedRoute";
 import { PriceProvider } from "./contexts/PriceContext";
 import { AdminPriceProvider } from "./contexts/AdminPriceContext";
+import MarketStatusPopup from "./components/MarketStatusPopup";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ export default function App() {
       <PriceProvider>
         <AdminPriceProvider>
           <SocketAuthHandler />
+          <MarketStatusPopup />
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
